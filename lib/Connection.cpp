@@ -63,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SHA1.h"
 #include <stdio.h>
 #include <time.h>
+#include "password.h"
 
 #ifdef _WIN32
 #define snprintf _snprintf
@@ -256,6 +257,7 @@ bool Connection::processHandshake()
     char *serverVersion = m_reader.readNTString();
     UINT32 threadId = m_reader.readLong();
     char *scrambleBuff = (char *) m_reader.readBytes(8);
+    strncpy(m_scramble, scrambleBuff, sizeof(m_scramble));
 
     UINT8 filler1 = m_reader.readByte();
     UINT16 serverCaps = m_reader.readShort();
@@ -523,9 +525,20 @@ bool Connection::connect(const char *_host, int _port, const char *_username, co
   }
   if (result == 0xfe)
   {
-    setError ("You are using old password, please update it use PASSWORD(), other than OLD_PASSWORD().", 4, UME_OTHER);
-    m_dbgMethodProgress --;
-    return false;
+    if (m_reader.getBytesLeft()==0)
+    {
+      if (!oldAuthSwitch())
+      {
+				m_dbgMethodProgress --;
+				return false;
+      }
+    }
+    else
+    {
+			m_dbgMethodProgress --;
+			setError ("Plugin authentication not supported.", 4, UME_OTHER);
+      return false;
+    }
   }
 
   m_reader.skip();
@@ -823,3 +836,32 @@ bool Connection::setTimeout(int timeout)
 
   return true;
 }
+
+bool Connection::oldAuthSwitch()
+{
+  char scrambled[SCRAMBLE_LENGTH_323+1];
+  scramble_323(scrambled, m_scramble, m_password.c_str());
+  m_writer.reset();
+  m_writer.writeNTString(scrambled);
+  m_writer.finalize(3);
+
+  if (!sendPacket())
+  {
+    return false;
+  }
+
+  m_reader.skip();
+  if (!recvPacket())
+  {
+    return false;
+  }
+
+  UINT8 result = m_reader.readByte();
+  if (result == 0xff)
+  {
+    handleErrorPacket();
+    return false;
+  }
+  return result == 0x00;
+}
+

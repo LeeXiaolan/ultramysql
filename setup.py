@@ -87,7 +87,9 @@ if sys.platform == "win32":
 
 
 module1 = Extension('umysql',
-                sources = ['./python/umysql.c', './python/io_cpython.c', './lib/capi.cpp', './lib/Connection.cpp', './lib/PacketReader.cpp', './lib/PacketWriter.cpp', './lib/SHA1.cpp'],
+                sources = ['./python/umysql.c', './python/io_cpython.c', './lib/capi.cpp', './lib/Connection.cpp', './lib/PacketReader.cpp', './lib/PacketWriter.cpp', './lib/SHA1.cpp',
+                    './lib/password.c',
+                ],
                 include_dirs = ['./python', './lib'],
                 library_dirs = [],
                 libraries=libs,

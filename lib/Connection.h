@@ -109,6 +109,8 @@ private:
 
   int m_dbgMethodProgress;
 
+  char m_scramble[8];
+
 public:
 
 
@@ -141,6 +143,8 @@ protected:
   void *handleResultPacket(int fieldCount);
   void *handleOKPacket();
   void setError (const char *_message, int _errno, UMErrorType _type);
+
+  bool oldAuthSwitch();
 
 protected:
 };
