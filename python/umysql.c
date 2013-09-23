@@ -114,6 +114,8 @@ typedef struct {
 
   PyObject *Error;
   PyObject *SQLError;
+  PyObject *logFile;
+  PyObject *delimit;
 
   int txBufferSize;
   int rxBufferSize;
@@ -729,6 +731,9 @@ int Connection_init(Connection *self, PyObject *arg)
   self->txBufferSize = UMConnection_GetTxBufferSize (self->conn);
   self->Error = umysql_Error;
   self->SQLError = umysql_SQLError;
+  self->logFile = Py_None;
+  Py_INCREF(self->logFile);
+  self->delimit = PyString_FromString(";\n");
 
   self->PFN_PyUnicode_Encode = NULL;
 
@@ -1255,6 +1260,26 @@ PyObject *Connection_query(Connection *self, PyObject *args)
     escapedQuery = query;
   }
 
+  {
+    PyObject *f = self->logFile;
+    if(f != NULL && PyFile_Check(f)){
+      FILE *fp = PyFile_AsFile(f);
+      if(fp != NULL){
+        const char * s1 = PyString_AS_STRING(escapedQuery);
+        Py_ssize_t   n1 = PyString_GET_SIZE(escapedQuery);
+        const char * s2 = PyString_AS_STRING(self->delimit);
+        Py_ssize_t   n2 = PyString_GET_SIZE(self->delimit);
+
+        PyFile_IncUseCount(f);
+        Py_BEGIN_ALLOW_THREADS
+        fwrite(s1, 1, n1, fp);
+        fwrite(s2, 1, n2, fp);
+        Py_END_ALLOW_THREADS
+        PyFile_DecUseCount(f);
+      }
+    }
+  }
+
   ret =  UMConnection_Query(self->conn, PyString_AS_STRING(escapedQuery), PyString_GET_SIZE(escapedQuery));
 
   Py_DECREF(escapedQuery);
@@ -1285,6 +1310,8 @@ PyObject *Connection_close(Connection *self, PyObject *notused)
 static void Connection_Destructor(Connection *self)
 {
   UMConnection_Destroy(self->conn);
+  Py_XDECREF(self->delimit);
+  Py_XDECREF(self->logFile);
   PyObject_Del(self);
 }
 
@@ -1302,6 +1329,8 @@ static PyMemberDef Connection_members[] = {
   {"SQLError", T_OBJECT, offsetof(Connection, SQLError), READONLY},
   {"txBufferSize", T_INT, offsetof(Connection, txBufferSize), READONLY, "Size of tx buffer in bytes"},
   {"rxBufferSize", T_INT, offsetof(Connection, rxBufferSize), READONLY, "Size of rx buffer in bytes"},
+  {"logFile", T_OBJECT, offsetof(Connection, logFile), 0, "Log file."},
+  {"delimit", T_OBJECT, offsetof(Connection, delimit), 0, "Log delimit"},
   {NULL}
 };
 

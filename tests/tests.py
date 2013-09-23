@@ -801,6 +801,29 @@ class TestMySQL(unittest.TestCase):
         self.assertEquals([values1, values2, values3, ], rs.rows)
         cnn.close()
 
+    def testLogFile(self):
+        import os
+        cnn = umysql.Connection()
+        cnn.connect (DB_HOST, 3306, DB_USER, DB_PASSWD, DB_DB)
+        self.assertEqual(cnn.delimit, ';\n')
+        cnn.logFile = tmp = os.tmpfile()
+
+        sql = 'select 1'
+        cnn.query(sql)
+        tmp.seek(0)
+        self.assertEqual(tmp.read(), sql + ';\n')
+
+        tmp.seek(0)
+        sql = 'select %s'
+        cnn.delimit = '//\n'
+        cnn.query(sql, (-55,))
+        tmp.seek(0)
+        self.assertEqual(tmp.read(), 'select -55//\n')
+
+        tmp.close()
+        cnn.close()
+
+
 if __name__ == '__main__':
     from guppy import hpy
     hp = hpy()
