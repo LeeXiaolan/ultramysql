@@ -1188,11 +1188,6 @@ PyObject *Connection_query(Connection *self, PyObject *args)
   PyObject *iterable = NULL;
   PyObject *escapedQuery = NULL;
 
-  if (!UMConnection_IsConnected(self->conn))
-  {
-    return PyErr_Format(PyExc_RuntimeError, "Not connected");
-  }
-
   if (!PyArg_ParseTuple (args, "O|O", &inQuery, &iterable))
   {
     return NULL;
@@ -1278,6 +1273,11 @@ PyObject *Connection_query(Connection *self, PyObject *args)
         PyFile_DecUseCount(f);
       }
     }
+  }
+
+  if (!UMConnection_IsConnected(self->conn))
+  {
+    return PyErr_Format(PyExc_RuntimeError, "Not connected");
   }
 
   ret =  UMConnection_Query(self->conn, PyString_AS_STRING(escapedQuery), PyString_GET_SIZE(escapedQuery));
