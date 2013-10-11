@@ -541,7 +541,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
 
       // Use PyLong for "INT UNSIGNED".
     case MFTYPE_LONG:
-      if(isUnsigned(ti->flags)){
+      if(mysqlIsUnsigned(ti->flags)){
         // XXX: No overflow detected.
         valobj = PyLong_FromLongLong(parseINT64 (value, ((char *) value) + cbValue));
         break;
@@ -560,7 +560,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
       //PyLong
     case MFTYPE_LONGLONG:
       {
-        if(isUnsigned(ti->flags)){
+        if(mysqlIsUnsigned(ti->flags)){
           valobj = PyLong_FromUnsignedLongLong(parseUINT64 (value, ((char *) value) + cbValue));
         }else{
           valobj = PyLong_FromLongLong(parseINT64 (value, ((char *) value) + cbValue));
