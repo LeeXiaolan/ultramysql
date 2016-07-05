@@ -867,6 +867,12 @@ class TestMySQL(unittest.TestCase):
         self.assertEquals((0,0), cnn.nextset())
         self.assertEquals(None, cnn.nextset())
 
+    def testQuote(self):
+        cnn = umysql.Connection()
+        cnn.connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWD, DB_DB)
+        cnn.query("truncate tbltest")
+        self.assertEquals((1, 0), cnn.query("insert into tbltest (test_id, test_string) values (%s, %s)", (1, (1, 2, 3))))
+
 if __name__ == '__main__':
     from guppy import hpy
     hp = hpy()

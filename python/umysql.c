@@ -981,6 +981,7 @@ int AppendAndEscapeString(char *buffStart, char *buffEnd, const char *strStart, 
 int AppendEscapedArg (Connection *self, char *start, char *end, PyObject *obj)
 {
   int ret;
+  int quote;
   PyObject *strobj;
 
   /*
@@ -1051,7 +1052,8 @@ int AppendEscapedArg (Connection *self, char *start, char *end, PyObject *obj)
           //FIXME: Might possible to avoid this?
           PRINTMARK();
           strobj = PyObject_Str(obj);
-          ret = AppendAndEscapeString(start, end, PyString_AS_STRING(strobj), PyString_AS_STRING(strobj) + PyString_GET_SIZE(strobj), FALSE);
+          quote = !(PyInt_Check(obj) || PyLong_Check(obj) || PyFloat_Check(obj));
+          ret = AppendAndEscapeString(start, end, PyString_AS_STRING(strobj), PyString_AS_STRING(strobj) + PyString_GET_SIZE(strobj), quote);
           Py_DECREF(strobj);
           return ret;
 }
